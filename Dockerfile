@@ -1,16 +1,20 @@
 FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 
-# Копируем файлы pom.xml и скачиваем зависимости
+# Копируем только pom.xml для кэширования зависимостей
 COPY pom.xml .
-RUN mvn dependency:go-offline
+# Используем пустой проект для загрузки зависимостей
+RUN mkdir -p src/main/java && \
+    mvn dependency:go-offline
 
-# Копируем исходный код и собираем приложение
+# Копируем исходный код
 COPY src ./src
-RUN mvn package -DskipTests
+
+# Собираем приложение с оптимизациями
+RUN mvn package -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 
 # Используем минимальный образ JRE для запуска приложения
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Копируем собранный JAR из предыдущего этапа
@@ -19,5 +23,5 @@ COPY --from=build /app/target/*.jar app.jar
 # Порт, который будет открыт
 EXPOSE 8080
 
-# Команда для запуска приложения
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Оптимизация JVM для контейнеров
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=70", "-jar", "app.jar"]
