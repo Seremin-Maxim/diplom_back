@@ -57,4 +57,25 @@ public class JwtTokenProvider {
             return false;
         }
     }
+    
+    /**
+     * Создает токен для указанного пользователя и роли
+     * Используется в интеграционных тестах
+     * 
+     * @param username имя пользователя
+     * @param role роль пользователя
+     * @return JWT токен
+     */
+    public String createToken(String username, String role) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
 }
