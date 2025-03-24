@@ -18,7 +18,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/lessons")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "${CORS_ALLOWED_ORIGINS}")
 public class LessonController {
 
     private final LessonService lessonService;
