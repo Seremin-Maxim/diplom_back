@@ -1,6 +1,7 @@
 package com.example.course_app.controller;
 
 import com.example.course_app.dto.AuthResponse;
+import com.example.course_app.entity.Role;
 import com.example.course_app.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,13 @@ public class AuthController {
             user.setPassword(signUpRequest.get("password"));
             user.setFirstName(signUpRequest.get("firstName"));
             user.setLastName(signUpRequest.get("lastName"));
-
+            
+            // Устанавливаем роль из запроса
+            String role = signUpRequest.get("role");
+            if (role != null && role.equals("TEACHER")) {
+                user.setRole(Role.TEACHER);
+            }
+            
             // Регистрируем пользователя
             User registeredUser = userService.registerUser(user);
             System.out.println("User registered successfully: " + registeredUser.getEmail());

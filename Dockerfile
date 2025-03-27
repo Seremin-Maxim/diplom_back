@@ -14,15 +14,15 @@ COPY pom.xml .
 # Используем пустой проект для загрузки зависимостей
 RUN mkdir -p src/main/java && \
     mkdir -p /root/.m2 && \
-    # Очищаем локальный кэш Maven и загружаем зависимости заново
-    mvn -s /root/.m2/settings.xml -B clean dependency:purge-local-repository dependency:resolve-plugins dependency:go-offline -U
+    # Загружаем только зависимости без очистки кэша
+    mvn -s /root/.m2/settings.xml -B dependency:resolve dependency:resolve-plugins
 
 # Копируем исходный код
 COPY src ./src
 
 # Собираем приложение с оптимизациями
 RUN mvn -s /root/.m2/settings.xml -B package \
-    -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true -U
+    -DskipTests -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 
 # Используем минимальный образ JRE для запуска приложения
 FROM eclipse-temurin:21-jre-alpine

@@ -52,7 +52,11 @@ public class UserService {
             throw new RuntimeException("Email is already taken!");
         }
         
-        user.setRole(Role.USER);
+        // Устанавливаем роль USER только если роль не была установлена ранее
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
+        
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
@@ -86,7 +90,7 @@ public class UserService {
             User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found ooooooooooooooooooo"));
             
-            return new AuthResponse(jwt, user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
+            return new AuthResponse(jwt, user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getRole());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Authentication failed: " + e.getMessage());

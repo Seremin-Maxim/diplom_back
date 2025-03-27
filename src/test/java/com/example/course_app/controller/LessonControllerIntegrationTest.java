@@ -8,6 +8,7 @@ import com.example.course_app.repository.UserRepository;
 import com.example.course_app.repository.CourseRepository;
 import com.example.course_app.repository.LessonRepository;
 import com.example.course_app.config.JwtTokenProvider;
+import com.example.course_app.config.TestEnvironmentInitializer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -35,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@ContextConfiguration(initializers = TestEnvironmentInitializer.class)
 public class LessonControllerIntegrationTest {
 
     @Autowired
