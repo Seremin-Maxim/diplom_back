@@ -52,20 +52,92 @@ public class StudentAnswerServiceImpl implements StudentAnswerService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalStateException("Вопрос с ID " + questionId + " не найден"));
 
+        System.out.println("Создание текстового ответа для вопроса ID: " + questionId + ", тип: " + question.getType());
+        System.out.println("Текст ответа: " + answerText);
+        
+        // Проверяем, что вопрос имеет тип TEXT_INPUT или строковое представление "TEXT"
+        boolean isTextInput = question.getType() == QuestionType.TEXT_INPUT || "TEXT".equals(question.getType().toString());
+        
+        if (!isTextInput) {
+            System.out.println("Предупреждение: вопрос не является текстовым, но обрабатывается как текстовый");
+        }
+
         // Создаем новый ответ студента
         StudentAnswer studentAnswer = new StudentAnswer();
         studentAnswer.setSubmission(submission);
         studentAnswer.setQuestion(question);
         studentAnswer.setAnswerText(answerText);
         
-        // Автоматически проверяем правильность ответа для вопросов с автоматической проверкой
-        if (question.getType() == QuestionType.SINGLE_CHOICE || 
-            question.getType() == QuestionType.MULTIPLE_CHOICE) {
-            boolean isCorrect = checkAnswerAutomatically(question, answerText);
-            studentAnswer.setIsCorrect(isCorrect);
+        // Для текстовых вопросов устанавливаем false, пока преподаватель не проверит
+        studentAnswer.setIsCorrect(false);
+        studentAnswer.setScore(0); // Начальная оценка 0, пока преподаватель не проверит
+
+        // Сохраняем ответ
+        StudentAnswer savedAnswer = studentAnswerRepository.save(studentAnswer);
+        System.out.println("Текстовый ответ сохранен с ID: " + savedAnswer.getId());
+        
+        // Добавляем ответ к отправке
+        submission.addAnswer(savedAnswer);
+        submissionRepository.save(submission);
+        
+        return savedAnswer;
+    }
+    
+    /**
+     * Создать новый ответ студента с выбранными вариантами ответа.
+     * Для вопросов с выбором (одиночным или множественным).
+     *
+     * @param submissionId идентификатор отправки
+     * @param questionId идентификатор вопроса
+     * @param selectedAnswerIds список идентификаторов выбранных вариантов ответа
+     * @return созданный ответ
+     */
+    @Override
+    @Transactional
+    public StudentAnswer createStudentAnswerWithSelectedOptions(Long submissionId, Long questionId, List<Long> selectedAnswerIds) {
+        // Находим отправку
+        StudentSubmission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new IllegalStateException("Отправка с ID " + submissionId + " не найдена"));
+
+        // Находим вопрос
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalStateException("Вопрос с ID " + questionId + " не найден"));
+
+        // Проверяем, что вопрос имеет тип с выбором
+        System.out.println("Тип вопроса: " + question.getType() + ", строковое представление: " + question.getType().toString());
+        
+        // Проверяем тип вопроса как по енуму, так и по строковому представлению
+        boolean isSingleChoice = question.getType() == QuestionType.SINGLE_CHOICE || "SINGLE_CHOICE".equals(question.getType().toString());
+        boolean isMultipleChoice = question.getType() == QuestionType.MULTIPLE_CHOICE || "MULTIPLE_CHOICE".equals(question.getType().toString());
+        
+        if (!isSingleChoice && !isMultipleChoice) {
+            throw new IllegalStateException("Вопрос с ID " + questionId + " не является вопросом с выбором. Тип вопроса: " + question.getType());
+        }
+
+        // Создаем новый ответ студента
+        StudentAnswer studentAnswer = new StudentAnswer();
+        studentAnswer.setSubmission(submission);
+        studentAnswer.setQuestion(question);
+        
+        // Формируем текст ответа из выбранных вариантов
+        String answerText = selectedAnswerIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        
+        studentAnswer.setAnswerText(answerText);
+        
+        // Проверяем правильность ответа
+        boolean isCorrect = checkSelectedAnswersCorrectness(question, selectedAnswerIds);
+        studentAnswer.setIsCorrect(isCorrect);
+        
+        // Устанавливаем оценку в зависимости от правильности ответа
+        if (isCorrect) {
+            // Если ответ правильный, устанавливаем полные баллы за вопрос
+            studentAnswer.setScore(question.getPoints());
+            System.out.println("Баллы за вопрос: " + question.getPoints());
         } else {
-            // Для вопросов с ручной проверкой устанавливаем false, пока преподаватель не проверит
-            studentAnswer.setIsCorrect(false);
+            studentAnswer.setScore(0);
+            System.out.println("Баллы за вопрос: 0");
         }
 
         // Сохраняем ответ
@@ -76,6 +148,62 @@ public class StudentAnswerServiceImpl implements StudentAnswerService {
         submissionRepository.save(submission);
         
         return savedAnswer;
+    }
+    
+    /**
+     * Проверить правильность выбранных вариантов ответа.
+     *
+     * @param question вопрос
+     * @param selectedAnswerIds список идентификаторов выбранных вариантов ответа
+     * @return true, если ответ правильный
+     */
+    private boolean checkSelectedAnswersCorrectness(Question question, List<Long> selectedAnswerIds) {
+        // Получаем все варианты ответов для вопроса
+        List<Answer> answers = answerRepository.findByQuestionId(question.getId());
+        
+        System.out.println("Проверка правильности ответа для вопроса ID: " + question.getId() + ", тип: " + question.getType());
+        System.out.println("Выбранные варианты: " + selectedAnswerIds);
+        
+        // Получаем список правильных вариантов ответов
+        List<Long> correctAnswerIds = answers.stream()
+                .filter(Answer::isCorrect)
+                .map(Answer::getId)
+                .collect(Collectors.toList());
+        
+        System.out.println("Правильные варианты: " + correctAnswerIds);
+        
+        // Проверяем тип вопроса как по енуму, так и по строковому представлению
+        boolean isSingleChoice = question.getType() == QuestionType.SINGLE_CHOICE || "SINGLE_CHOICE".equals(question.getType().toString());
+        boolean isMultipleChoice = question.getType() == QuestionType.MULTIPLE_CHOICE || "MULTIPLE_CHOICE".equals(question.getType().toString());
+        
+        if (isSingleChoice) {
+            // Для вопроса с одним вариантом ответа
+            // Проверяем, что выбран только один вариант и он правильный
+            // Для вопросов с одиночным выбором должен быть только один правильный вариант
+            if (correctAnswerIds.size() != 1) {
+                System.out.println("Ошибка в данных: для вопроса с одиночным выбором указано " + correctAnswerIds.size() + " правильных вариантов");
+                // Берем первый правильный вариант для проверки
+                if (!correctAnswerIds.isEmpty()) {
+                    Long correctId = correctAnswerIds.get(0);
+                    boolean result = selectedAnswerIds.size() == 1 && selectedAnswerIds.get(0).equals(correctId);
+                    System.out.println("Результат проверки одиночного выбора: " + result);
+                    return result;
+                }
+            }
+            
+            boolean result = selectedAnswerIds.size() == 1 && correctAnswerIds.contains(selectedAnswerIds.get(0));
+            System.out.println("Результат проверки одиночного выбора: " + result);
+            return result;
+        } else if (isMultipleChoice) {
+            // Для вопроса с несколькими вариантами ответа
+            // Проверяем, что выбраны все правильные варианты и только они (строгая проверка)
+            boolean result = selectedAnswerIds.containsAll(correctAnswerIds) && correctAnswerIds.containsAll(selectedAnswerIds);
+            System.out.println("Результат проверки множественного выбора: " + result);
+            return result;
+        }
+        
+        System.out.println("Неизвестный тип вопроса: " + question.getType());
+        return false;
     }
 
     @Override

@@ -2,10 +2,12 @@ package com.example.course_app.repository;
 
 import com.example.course_app.entity.courses.Course;
 import com.example.course_app.entity.courses.CourseStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Репозиторий для работы с курсами.
@@ -15,10 +17,12 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     
     /**
      * Найти все курсы конкретного преподавателя.
+     * Использует EntityGraph для загрузки связанных сущностей.
      * 
      * @param teacherId идентификатор преподавателя
      * @return список курсов преподавателя
      */
+    @EntityGraph(attributePaths = {"teacher"})
     List<Course> findByTeacherId(Long teacherId);
     
     /**
@@ -60,4 +64,14 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
      * @return true, если курс с таким названием существует и это не текущий курс
      */
     boolean existsByTitleAndIdNot(String title, Long id);
+    
+    /**
+     * Найти курс по ID с загрузкой преподавателя.
+     * Использует EntityGraph для загрузки связанных сущностей.
+     * 
+     * @param id идентификатор курса
+     * @return курс с загруженными связями
+     */
+    @EntityGraph(attributePaths = {"teacher"})
+    Optional<Course> findCourseWithTeacherById(Long id);
 }

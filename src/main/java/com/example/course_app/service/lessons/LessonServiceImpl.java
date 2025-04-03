@@ -7,6 +7,8 @@ import com.example.course_app.repository.CourseRepository;
 import com.example.course_app.repository.LessonRepository;
 import com.example.course_app.repository.TestRepository;
 import com.example.course_app.service.tests.TestService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import java.util.Optional;
  */
 @Service
 public class LessonServiceImpl implements LessonService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(LessonServiceImpl.class);
 
     private final LessonRepository lessonRepository;
     private final CourseRepository courseRepository;
@@ -40,20 +44,41 @@ public class LessonServiceImpl implements LessonService {
     @Override
     @Transactional
     public Lesson createLesson(Lesson lesson, Long courseId) {
-        // Находим курс
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Курс с ID " + courseId + " не найден"));
-
-        // Устанавливаем курс для урока
-        lesson.setCourse(course);
+        logger.info("Начало создания урока для курса с ID: {}", courseId);
         
-        // Если порядковый номер не установлен, устанавливаем следующий доступный
-        if (lesson.getOrderNumber() == null) {
-            lesson.setOrderNumber(getNextOrderNumber(courseId));
+        try {
+            // Находим курс
+            logger.info("Поиск курса с ID: {}", courseId);
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> {
+                        logger.error("Курс с ID {} не найден", courseId);
+                        return new IllegalArgumentException("Курс с ID " + courseId + " не найден");
+                    });
+            logger.info("Курс с ID: {} найден: {}", courseId, course.getTitle());
+    
+            // Устанавливаем курс для урока
+            lesson.setCourse(course);
+            logger.info("Курс установлен для урока");
+            
+            // Если порядковый номер не установлен, устанавливаем следующий доступный
+            if (lesson.getOrderNumber() == null) {
+                int nextOrderNumber = getNextOrderNumber(courseId);
+                lesson.setOrderNumber(nextOrderNumber);
+                logger.info("Автоматически установлен порядковый номер: {}", nextOrderNumber);
+            } else {
+                logger.info("Используется предоставленный порядковый номер: {}", lesson.getOrderNumber());
+            }
+    
+            // Сохраняем урок
+            logger.info("Сохранение урока в базу данных");
+            Lesson savedLesson = lessonRepository.save(lesson);
+            logger.info("Урок успешно сохранен с ID: {}", savedLesson.getId());
+            
+            return savedLesson;
+        } catch (Exception e) {
+            logger.error("Ошибка при создании урока: {}", e.getMessage(), e);
+            throw e; // Перебрасываем исключение дальше, чтобы оно было обработано в контроллере
         }
-
-        // Сохраняем урок
-        return lessonRepository.save(lesson);
     }
 
     @Override
@@ -78,7 +103,8 @@ public class LessonServiceImpl implements LessonService {
     @Override
     @Transactional(readOnly = true)
     public Optional<Lesson> getLessonById(Long id) {
-        return lessonRepository.findById(id);
+        // Используем метод с EntityGraph для загрузки связанных сущностей
+        return lessonRepository.findLessonWithRelationsById(id);
     }
 
     @Override
@@ -90,7 +116,15 @@ public class LessonServiceImpl implements LessonService {
     @Override
     @Transactional(readOnly = true)
     public List<Lesson> getLessonsByCourseIdOrdered(Long courseId) {
-        return lessonRepository.findByCourseIdOrderByOrderNumberAsc(courseId);
+        logger.info("Запрос на получение уроков курса с ID: {} в порядке возрастания", courseId);
+        try {
+            List<Lesson> lessons = lessonRepository.findByCourseIdOrderByOrderNumberAsc(courseId);
+            logger.info("Найдено уроков: {}", lessons != null ? lessons.size() : 0);
+            return lessons;
+        } catch (Exception e) {
+            logger.error("Ошибка при получении уроков курса: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -167,10 +201,19 @@ public class LessonServiceImpl implements LessonService {
         return false;
     }
 
+    /**
+     * Получить следующий доступный порядковый номер для урока в курсе
+     * 
+     * @param courseId идентификатор курса
+     * @return следующий порядковый номер
+     */
     @Override
     @Transactional(readOnly = true)
     public Integer getNextOrderNumber(Long courseId) {
+        logger.info("Получение следующего порядкового номера для курса с ID: {}", courseId);
         // Получаем максимальный порядковый номер урока в курсе и добавляем 1
-        return lessonRepository.findMaxOrderNumberByCourseId(courseId) + 1;
+        Integer maxOrderNumber = lessonRepository.findMaxOrderNumberByCourseId(courseId);
+        logger.info("Максимальный текущий порядковый номер: {}", maxOrderNumber);
+        return maxOrderNumber + 1;
     }
 }

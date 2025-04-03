@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -128,6 +129,7 @@ public class AnswerController {
      * @return обновленный вариант ответа
      */
     @PutMapping("/{id}")
+    @Transactional // Добавляем аннотацию @Transactional для решения проблемы с LazyInitializationException
     public ResponseEntity<?> updateAnswer(
             @PathVariable Long id,
             @RequestBody Map<String, Object> requestBody,
@@ -140,17 +142,6 @@ public class AnswerController {
                     .body(Map.of("error", "Вариант ответа с ID " + id + " не найден"));
         }
         
-        Answer answer = answerOpt.get();
-        Question question = answer.getQuestion();
-        Test test = question.getTest();
-        
-        // Проверяем права доступа (только преподаватель может обновлять варианты ответов)
-        User user = (User) authentication.getPrincipal();
-        if (!testService.isTestCreatedByUser(test.getId(), user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "У вас нет прав для обновления этого варианта ответа"));
-        }
-        
         // Получаем данные из запроса
         String text = (String) requestBody.get("text");
         Boolean isCorrect = (Boolean) requestBody.get("isCorrect");
@@ -158,6 +149,23 @@ public class AnswerController {
         if (text == null || isCorrect == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Необходимо указать текст и статус правильности ответа"));
+        }
+        
+        Answer answer = answerOpt.get();
+        Long questionId = answer.getQuestion().getId();
+        
+        // Проверяем права доступа (только преподаватель может обновлять варианты ответов)
+        User user = (User) authentication.getPrincipal();
+        
+        // Получаем тест через questionService вместо ленивой загрузки
+        Question question = questionService.getQuestionById(questionId)
+                .orElseThrow(() -> new IllegalStateException("Вопрос с ID " + questionId + " не найден"));
+        
+        Long testId = question.getTest().getId();
+        
+        if (!testService.isTestCreatedByUser(testId, user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "У вас нет прав для обновления этого варианта ответа"));
         }
         
         // Обновляем вариант ответа
@@ -173,6 +181,7 @@ public class AnswerController {
      * @return статус успешного удаления или ошибка
      */
     @DeleteMapping("/{id}")
+    @Transactional // Добавляем аннотацию @Transactional для решения проблемы с LazyInitializationException
     public ResponseEntity<?> deleteAnswer(
             @PathVariable Long id,
             Authentication authentication) {
@@ -185,12 +194,17 @@ public class AnswerController {
         }
         
         Answer answer = answerOpt.get();
-        Question question = answer.getQuestion();
-        Test test = question.getTest();
+        Long questionId = answer.getQuestion().getId();
+        
+        // Получаем вопрос через questionService вместо ленивой загрузки
+        Question question = questionService.getQuestionById(questionId)
+                .orElseThrow(() -> new IllegalStateException("Вопрос с ID " + questionId + " не найден"));
+        
+        Long testId = question.getTest().getId();
         
         // Проверяем права доступа (только преподаватель может удалять варианты ответов)
         User user = (User) authentication.getPrincipal();
-        if (!testService.isTestCreatedByUser(test.getId(), user.getId())) {
+        if (!testService.isTestCreatedByUser(testId, user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "У вас нет прав для удаления этого варианта ответа"));
         }

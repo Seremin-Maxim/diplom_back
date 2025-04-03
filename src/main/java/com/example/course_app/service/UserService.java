@@ -114,4 +114,15 @@ public UserProfileResponse getUserProfile(Long id) {
         user.getLastName()
     );
 }
+
+/**
+ * Получение пользователя по имени пользователя (email)
+ * @param username имя пользователя (email)
+ * @return пользователь
+ * @throws UsernameNotFoundException если пользователь не найден
+ */
+public User findByUsername(String username) {
+    return userRepository.findByEmail(username)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+}
 }

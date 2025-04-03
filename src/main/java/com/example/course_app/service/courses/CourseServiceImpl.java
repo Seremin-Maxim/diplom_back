@@ -63,8 +63,8 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public Course updateCourse(Long id, Course courseDetails) {
-        // Находим существующий курс
-        Course existingCourse = courseRepository.findById(id)
+        // Находим существующий курс с загрузкой учителя
+        Course existingCourse = courseRepository.findCourseWithTeacherById(id)
                 .orElseThrow(() -> new IllegalStateException("Курс с ID " + id + " не найден"));
 
         // Проверяем, существует ли другой курс с таким названием
@@ -77,17 +77,27 @@ public class CourseServiceImpl implements CourseService {
         existingCourse.setTitle(courseDetails.getTitle());
         existingCourse.setDescription(courseDetails.getDescription());
         
-        // Не обновляем статус и публичность через этот метод
+        // Обновляем публичность, если она указана
+        if (courseDetails.isPublic() != existingCourse.isPublic()) {
+            existingCourse.setPublic(courseDetails.isPublic());
+        }
+        
+        // Не обновляем статус через этот метод
         // Для этого есть отдельные методы
 
         // Сохраняем обновленный курс
-        return courseRepository.save(existingCourse);
+        Course savedCourse = courseRepository.save(existingCourse);
+        
+        // Загружаем курс с учителем, чтобы избежать LazyInitializationException
+        return courseRepository.findCourseWithTeacherById(savedCourse.getId())
+                .orElseThrow(() -> new IllegalStateException("Не удалось загрузить обновленный курс"));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<Course> getCourseById(Long id) {
-        return courseRepository.findById(id);
+        // Используем JOIN FETCH для загрузки связей вместе с курсом
+        return courseRepository.findCourseWithTeacherById(id);
     }
 
     @Override

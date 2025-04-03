@@ -145,4 +145,17 @@ public class LessonEnrollmentServiceImpl implements LessonEnrollmentService {
         // Вычисляем процент завершенных уроков
         return (double) completedLessons / courseLessons.size() * 100;
     }
+    
+    /**
+     * Проверить, зачислен ли студент на курс.
+     *
+     * @param studentId идентификатор студента
+     * @param courseId идентификатор курса
+     * @return true, если студент зачислен на курс
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isStudentEnrolledInCourse(Long studentId, Long courseId) {
+        return courseEnrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId);
+    }
 }

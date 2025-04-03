@@ -1,5 +1,6 @@
 package com.example.course_app.entity.courses;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class Course {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
+    @JsonIgnoreProperties({"password", "courses", "hibernateLazyInitializer", "handler"})
     private User teacher;
 
     @Column(nullable = false, unique = true)

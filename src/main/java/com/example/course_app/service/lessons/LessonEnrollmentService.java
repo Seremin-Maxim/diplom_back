@@ -89,4 +89,13 @@ public interface LessonEnrollmentService {
      * @return процент завершенных уроков (от 0 до 100)
      */
     double getStudentProgressInCourse(Long studentId, Long courseId);
+    
+    /**
+     * Проверить, зачислен ли студент на курс.
+     *
+     * @param studentId идентификатор студента
+     * @param courseId идентификатор курса
+     * @return true, если студент зачислен на курс
+     */
+    boolean isStudentEnrolledInCourse(Long studentId, Long courseId);
 }

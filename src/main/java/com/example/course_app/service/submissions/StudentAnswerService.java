@@ -95,6 +95,17 @@ public interface StudentAnswerService {
     boolean checkAnswerCorrectness(Long answerId);
     
     /**
+     * Создать новый ответ студента с выбранными вариантами ответа.
+     * Для вопросов с выбором (одиночным или множественным).
+     * 
+     * @param submissionId идентификатор отправки
+     * @param questionId идентификатор вопроса
+     * @param selectedAnswerIds список идентификаторов выбранных вариантов ответа
+     * @return созданный ответ
+     */
+    StudentAnswer createStudentAnswerWithSelectedOptions(Long submissionId, Long questionId, List<Long> selectedAnswerIds);
+    
+    /**
      * Получить количество правильных ответов в отправке.
      * 
      * @param submissionId идентификатор отправки
