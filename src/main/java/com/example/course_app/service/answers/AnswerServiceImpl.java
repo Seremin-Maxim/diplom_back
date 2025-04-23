@@ -36,6 +36,18 @@ public class AnswerServiceImpl implements AnswerService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalStateException("Вопрос с ID " + questionId + " не найден"));
 
+        // Проверка для вопросов с одиночным выбором
+        if (isCorrect && question.getType() != null && question.getType().toString().equals("SINGLE_CHOICE")) {
+            // Проверяем, есть ли уже правильный ответ для этого вопроса
+            List<Answer> correctAnswers = answerRepository.findByQuestionIdAndIsCorrectTrue(questionId);
+            if (!correctAnswers.isEmpty()) {
+                throw new IllegalStateException(
+                    "Для вопроса с одиночным выбором (ID: " + questionId + 
+                    ") уже существует правильный ответ. Для вопросов типа SINGLE_CHOICE допустим только один правильный ответ."
+                );
+            }
+        }
+
         // Создаем новый ответ
         Answer answer = new Answer();
         answer.setQuestion(question);
@@ -70,6 +82,19 @@ public class AnswerServiceImpl implements AnswerService {
         // Находим существующий ответ
         Answer answer = answerRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Ответ с ID " + id + " не найден"));
+
+        // Проверка для вопросов с одиночным выбором
+        if (isCorrect && answer.getQuestion().getType() != null && 
+            answer.getQuestion().getType().toString().equals("SINGLE_CHOICE")) {
+            // Проверяем, есть ли уже другой правильный ответ для этого вопроса
+            List<Answer> correctAnswers = answerRepository.findByQuestionIdAndIsCorrectTrue(answer.getQuestion().getId());
+            if (!correctAnswers.isEmpty() && !correctAnswers.get(0).getId().equals(id)) {
+                throw new IllegalStateException(
+                    "Для вопроса с одиночным выбором (ID: " + answer.getQuestion().getId() + 
+                    ") уже существует правильный ответ. Для вопросов типа SINGLE_CHOICE допустим только один правильный ответ."
+                );
+            }
+        }
 
         // Обновляем информацию об ответе
         answer.setText(text);

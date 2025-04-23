@@ -24,18 +24,18 @@ import java.util.Optional;
 public class SubmissionServiceImpl implements SubmissionService {
 
     private final StudentSubmissionRepository submissionRepository;
-    private final StudentAnswerRepository answerRepository;
+    private final StudentAnswerRepository studentAnswerRepository;
     private final UserRepository userRepository;
     private final TestRepository testRepository;
 
     @Autowired
     public SubmissionServiceImpl(
             StudentSubmissionRepository submissionRepository,
-            StudentAnswerRepository answerRepository,
+            StudentAnswerRepository studentAnswerRepository,
             UserRepository userRepository,
             TestRepository testRepository) {
         this.submissionRepository = submissionRepository;
-        this.answerRepository = answerRepository;
+        this.studentAnswerRepository = studentAnswerRepository;
         this.userRepository = userRepository;
         this.testRepository = testRepository;
     }
@@ -141,11 +141,11 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .orElseThrow(() -> new IllegalStateException("Отправка с ID " + id + " не найдена"));
 
         // Получаем все ответы для отправки
-        List<StudentAnswer> answers = answerRepository.findBySubmissionId(id);
+        List<StudentAnswer> answers = studentAnswerRepository.findBySubmissionId(id);
 
         // Удаляем все ответы
         if (!answers.isEmpty()) {
-            answerRepository.deleteAll(answers);
+            studentAnswerRepository.deleteAll(answers);
         }
 
         // Удаляем отправку
@@ -171,7 +171,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .orElseThrow(() -> new IllegalStateException("Отправка с ID " + submissionId + " не найдена"));
 
         // Получаем все правильные ответы для отправки
-        List<StudentAnswer> correctAnswers = answerRepository.findBySubmissionIdAndIsCorrectTrue(submissionId);
+        List<StudentAnswer> correctAnswers = studentAnswerRepository.findBySubmissionIdAndIsCorrectTrue(submissionId);
 
         // Рассчитываем общую сумму баллов
         int totalPoints = 0;
@@ -187,7 +187,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<StudentSubmission> getLatestSubmission(Long studentId, Long testId) {
         // Получаем все отправки студента для теста
         List<StudentSubmission> submissions = submissionRepository.findByStudentIdAndTestId(studentId, testId);
@@ -199,6 +199,6 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         // Находим последнюю отправку по времени
         return submissions.stream()
-                .max(Comparator.comparing(StudentSubmission::getStartTime));
+                .max(Comparator.comparing(StudentSubmission::getCreatedAt));
     }
 }

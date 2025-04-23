@@ -17,8 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.List;
 import java.util.Optional;
@@ -65,6 +65,7 @@ public class SubmissionController {
      * @return созданная отправка
      */
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createSubmission(@Valid @RequestBody SubmissionRequest request) {
         try {
             // Получаем текущего пользователя
@@ -138,8 +139,24 @@ public class SubmissionController {
             System.out.println("Отправка завершена");
             
             // Рассчитываем итоговую оценку
-            submissionService.calculateSubmissionScore(submission.getId());
-            System.out.println("Итоговая оценка рассчитана");
+            int score = submissionService.calculateSubmissionScore(submission.getId());
+            System.out.println("Итоговая оценка рассчитана: " + score);
+            
+            // Получаем обновленную отправку с рассчитанной оценкой
+            Optional<StudentSubmission> updatedSubmissionOpt = submissionService.getSubmissionById(submission.getId());
+            if (updatedSubmissionOpt.isPresent()) {
+                submission = updatedSubmissionOpt.get();
+            }
+            
+            // Загружаем данные студента и теста, чтобы избежать ошибок LazyInitializationException
+            try {
+                String studentName = submission.getStudent().getFirstName() + " " + submission.getStudent().getLastName();
+                String testTitle = submission.getTest().getTitle();
+                System.out.println("Студент: " + studentName + ", Тест: " + testTitle);
+            } catch (Exception e) {
+                System.out.println("Не удалось получить данные студента: " + e.getMessage());
+                System.out.println("Не удалось получить название теста: " + e.getMessage());
+            }
             
             // Возвращаем результат
             return ResponseEntity.ok(convertToDTO(submission));
@@ -158,6 +175,7 @@ public class SubmissionController {
      * @return отправка или статус 404, если отправка не найдена
      */
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<SubmissionDTO> getSubmissionById(@PathVariable Long id) {
         // Получаем текущего пользователя
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -187,6 +205,7 @@ public class SubmissionController {
      * @return список отправок
      */
     @GetMapping("/my")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<SubmissionDTO>> getMySubmissions() {
         // Получаем текущего пользователя
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -208,6 +227,7 @@ public class SubmissionController {
      * @return список отправок
      */
     @GetMapping("/test/{testId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<SubmissionDTO>> getSubmissionsByTestId(@PathVariable Long testId) {
         // Получаем текущего пользователя
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -241,6 +261,7 @@ public class SubmissionController {
      * @return список ответов
      */
     @GetMapping("/{submissionId}/answers")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<StudentAnswerDTO>> getAnswersBySubmissionId(@PathVariable Long submissionId) {
         // Получаем текущего пользователя
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
