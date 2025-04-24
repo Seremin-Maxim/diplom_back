@@ -30,6 +30,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
      * 
      * @return список опубликованных курсов
      */
+    @EntityGraph(attributePaths = {"teacher"})
     List<Course> findByStatus(CourseStatus status);
     
     /**
@@ -46,6 +47,16 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
      * @return список курсов, содержащих указанную строку в названии
      */
     List<Course> findByTitleContainingIgnoreCase(String title);
+    
+    /**
+     * Найти курсы по названию и статусу (частичное совпадение, без учета регистра).
+     * 
+     * @param title часть названия курса
+     * @param status статус курса
+     * @return список курсов, содержащих указанную строку в названии и имеющих указанный статус
+     */
+    @EntityGraph(attributePaths = {"teacher"})
+    List<Course> findByTitleContainingIgnoreCaseAndStatus(String title, CourseStatus status);
     
     /**
      * Проверить, существует ли курс с таким названием.

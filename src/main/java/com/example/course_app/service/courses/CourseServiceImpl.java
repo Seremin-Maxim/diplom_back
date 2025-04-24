@@ -121,13 +121,24 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public List<Course> getPublicCourses() {
-        return courseRepository.findByStatusAndIsPublicTrue(CourseStatus.PUBLISHED);
+        return courseRepository.findByStatus(CourseStatus.PUBLISHED);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Course> getAllPublicCourses() {
+        return courseRepository.findByStatus(CourseStatus.PUBLISHED);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Course> searchCoursesByTitle(String title) {
-        return courseRepository.findByTitleContainingIgnoreCase(title);
+    public List<Course> searchCoursesByTitle(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return getPublicCourses(); // Возвращаем все публичные курсы, если запрос пустой
+        }
+        
+        // Ищем курсы, содержащие запрос в названии (без учета регистра)
+        return courseRepository.findByTitleContainingIgnoreCaseAndStatus(query, CourseStatus.PUBLISHED);
     }
 
     @Override

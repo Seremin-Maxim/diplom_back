@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -82,6 +81,12 @@ public class CourseController {
         return ResponseEntity.ok(CourseMapper.toDTO(updatedCourse));
     }
 
+    /**
+     * Удаление курса
+     * @param id ID курса
+     * @param authentication данные аутентификации
+     * @return статус 204 No Content
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
@@ -133,24 +138,46 @@ public class CourseController {
     }
 
     /**
+     * Получение всех публичных курсов
+     * @return список всех публичных курсов
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<CourseDTO>> getPublicCourses() {
+        List<Course> courses = courseService.getPublicCourses();
+        return ResponseEntity.ok(CourseMapper.toDTOList(courses));
+    }
+    
+    /**
+     * Поиск курсов по названию
+     * @param query строка поиска
+     * @return список курсов, названия которых содержат строку поиска
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<CourseDTO>> searchCourses(@RequestParam String query) {
+        List<Course> courses = courseService.searchCoursesByTitle(query);
+        return ResponseEntity.ok(CourseMapper.toDTOList(courses));
+    }
+
+    /**
      * Получение курсов преподавателя
      * @param teacherId ID преподавателя
      * @return список курсов преподавателя
      */
     @GetMapping("/teacher/{teacherId}")
-    public ResponseEntity<List<CourseDTO>> getTeacherCourses(@PathVariable Long teacherId) {
+    public ResponseEntity<List<CourseDTO>> getCoursesByTeacher(@PathVariable Long teacherId) {
         List<Course> courses = courseService.getCoursesByTeacherId(teacherId);
         return ResponseEntity.ok(CourseMapper.toDTOList(courses));
     }
 
     /**
-     * Получение публичных курсов
-     * @return список публичных курсов
+     * Получение курсов текущего преподавателя
+     * @param authentication данные аутентификации
+     * @return список курсов преподавателя
      */
-    @GetMapping("/public")
-    @Transactional(readOnly = true)
-    public ResponseEntity<List<CourseDTO>> getPublicCourses() {
-        List<Course> courses = courseService.getPublicCourses();
+    @GetMapping("/teacher")
+    public ResponseEntity<List<CourseDTO>> getTeacherCourses(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        List<Course> courses = courseService.getCoursesByTeacherId(user.getId());
         return ResponseEntity.ok(CourseMapper.toDTOList(courses));
     }
 }

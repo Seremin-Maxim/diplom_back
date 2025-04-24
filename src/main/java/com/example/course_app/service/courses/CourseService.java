@@ -70,12 +70,19 @@ public interface CourseService {
     List<Course> getPublicCourses();
     
     /**
-     * Поиск курсов по названию (частичное совпадение).
+     * Получить все публичные курсы.
      *
-     * @param title часть названия курса
-     * @return список курсов, содержащих указанную строку в названии
+     * @return список всех публичных курсов
      */
-    List<Course> searchCoursesByTitle(String title);
+    List<Course> getAllPublicCourses();
+    
+    /**
+     * Поиск курсов по названию.
+     * 
+     * @param query строка поиска
+     * @return список курсов, названия которых содержат строку поиска
+     */
+    List<Course> searchCoursesByTitle(String query);
     
     /**
      * Изменить статус курса.
