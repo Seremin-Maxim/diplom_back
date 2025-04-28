@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -92,10 +93,20 @@ public class LessonEnrollmentController {
         User user = userService.findByUsername(username);
         
         try {
-            LessonEnrollment enrollment = enrollmentService.completeLessonForStudent(user.getId(), lessonId);
-            return ResponseEntity.ok(convertToDTO(enrollment));
+            // Вызываем метод завершения урока
+            enrollmentService.completeLessonForStudent(user.getId(), lessonId);
+            
+            // Возвращаем простой ответ об успехе без преобразования в DTO
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Урок успешно завершен",
+                "lessonId", lessonId
+            ));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
         }
     }
 
@@ -304,10 +315,19 @@ public class LessonEnrollmentController {
     private EnrollmentDTO convertToDTO(LessonEnrollment enrollment) {
         EnrollmentDTO dto = new EnrollmentDTO();
         dto.setId(enrollment.getId());
-        dto.setStudentId(enrollment.getStudent().getId());
-        dto.setStudentName(enrollment.getStudent().getUsername());
-        dto.setLessonId(enrollment.getLesson().getId());
-        dto.setLessonTitle(enrollment.getLesson().getTitle());
+        
+        // Добавляем проверки на null для предотвращения NullPointerException
+        if (enrollment.getStudent() != null) {
+            dto.setStudentId(enrollment.getStudent().getId());
+            // Используем getEmail() вместо getUsername()
+            dto.setStudentName(enrollment.getStudent().getEmail());
+        }
+        
+        if (enrollment.getLesson() != null) {
+            dto.setLessonId(enrollment.getLesson().getId());
+            dto.setLessonTitle(enrollment.getLesson().getTitle());
+        }
+        
         dto.setJoinedAt(enrollment.getJoinedAt());
         dto.setCompleted(enrollment.getCompleted());
         return dto;

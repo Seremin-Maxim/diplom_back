@@ -38,6 +38,27 @@ public class LessonMapper {
         if (lesson.getCourse() != null) {
             dto.setCourseId(lesson.getCourse().getId());
             dto.setCourseTitle(lesson.getCourse().getTitle());
+            
+            // Добавляем информацию об авторе (преподавателе курса) с проверкой на null
+            try {
+                if (lesson.getCourse().getTeacher() != null) {
+                    dto.setAuthorId(lesson.getCourse().getTeacher().getId());
+                    // Формируем полное имя из firstName и lastName с проверкой на null
+                    String firstName = lesson.getCourse().getTeacher().getFirstName() != null ? 
+                                      lesson.getCourse().getTeacher().getFirstName() : "";
+                    String lastName = lesson.getCourse().getTeacher().getLastName() != null ? 
+                                     lesson.getCourse().getTeacher().getLastName() : "";
+                    String authorName = firstName + " " + lastName;
+                    dto.setAuthorName(authorName.trim());
+                } else {
+                    dto.setAuthorId(null);
+                    dto.setAuthorName("Не указан");
+                }
+            } catch (Exception e) {
+                // В случае LazyInitializationException или другой ошибки
+                dto.setAuthorId(null);
+                dto.setAuthorName("Не указан");
+            }
         }
         
         // В текущей реализации у Lesson нет поля test, поэтому не устанавливаем testId

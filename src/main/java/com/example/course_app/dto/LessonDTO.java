@@ -18,6 +18,8 @@ public class LessonDTO {
     private Long testId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String authorName;
+    private Long authorId;
     
     /**
      * Конструктор по умолчанию
@@ -115,5 +117,21 @@ public class LessonDTO {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getAuthorName() {
+        return authorName;
+    }
+    
+    public void setAuthorName(String authorName) {
+        this.authorName = authorName;
+    }
+    
+    public Long getAuthorId() {
+        return authorId;
+    }
+    
+    public void setAuthorId(Long authorId) {
+        this.authorId = authorId;
     }
 }

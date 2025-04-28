@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -62,8 +63,9 @@ public class TestAccessController {
         // Получаем список доступных тестов для студента
         List<Test> tests = testAccessService.getAvailableTestsForStudent(user.getId(), lessonId);
         
+        // Если тесты не найдены, возвращаем пустой список вместо ошибки 403
         if (tests.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.ok(Collections.emptyList());
         }
         
         // Формируем список доступных тестов с токенами доступа

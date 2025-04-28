@@ -70,6 +70,7 @@ public class LessonController {
      * @return список уроков курса
      */
     @GetMapping("/course/{courseId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<LessonDTO>> getLessonsByCourseId(@PathVariable Long courseId) {
         try {
             logger.info("Запрос на получение уроков для курса с ID: {}", courseId);
@@ -128,6 +129,7 @@ public class LessonController {
      * @return урок или статус 404, если урок не найден
      */
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<LessonDTO> getLessonById(@PathVariable Long id) {
         try {
             Optional<Lesson> lesson = lessonService.getLessonById(id);

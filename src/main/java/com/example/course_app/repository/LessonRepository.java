@@ -22,7 +22,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
      * @param id идентификатор урока
      * @return урок с загруженными связями
      */
-    @EntityGraph(attributePaths = {"course"})
+    @EntityGraph(attributePaths = {"course", "course.teacher"})
     Optional<Lesson> findLessonWithRelationsById(Long id);
     
     /**
@@ -32,7 +32,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
      * @param courseId идентификатор курса
      * @return список уроков курса
      */
-    @EntityGraph(attributePaths = {"course"})
+    @EntityGraph(attributePaths = {"course", "course.teacher"})
     List<Lesson> findByCourseId(Long courseId);
     
     /**
@@ -42,7 +42,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
      * @param courseId идентификатор курса
      * @return отсортированный список уроков курса
      */
-    @EntityGraph(attributePaths = {"course"})
+    @EntityGraph(attributePaths = {"course", "course.teacher"})
     List<Lesson> findByCourseIdOrderByOrderNumberAsc(Long courseId);
     
     /**
