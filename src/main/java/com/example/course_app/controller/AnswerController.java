@@ -181,7 +181,7 @@ public class AnswerController {
      * @return статус успешного удаления или ошибка
      */
     @DeleteMapping("/{id}")
-    @Transactional // Добавляем аннотацию @Transactional для решения проблемы с LazyInitializationException
+    @Transactional 
     public ResponseEntity<?> deleteAnswer(
             @PathVariable Long id,
             Authentication authentication) {

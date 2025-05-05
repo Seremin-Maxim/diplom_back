@@ -25,8 +25,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Контроллер для управления записями студентов на уроки.
  */
