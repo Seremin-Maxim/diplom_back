@@ -1,6 +1,7 @@
 package com.example.course_app.controller;
 
 import com.example.course_app.dto.AuthResponse;
+import com.example.course_app.entity.Role;
 import com.example.course_app.entity.User;
 import com.example.course_app.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,12 +86,16 @@ public class AuthControllerTest {
         loginRequest.put("email", "test@example.com");
         loginRequest.put("password", "password123");
 
+        // Используем одну из доступных ролей из перечисления
+        Role userRole = Role.USER; // доступные значения: USER, TEACHER, ADMIN
+        
         AuthResponse authResponse = new AuthResponse(
             "jwt-token",
             1L,
             "test@example.com",
             "Иван",
-            "Иванов"
+            "Иванов",
+            userRole
         );
 
         when(userService.authenticateUser(anyString(), anyString())).thenReturn(authResponse);
